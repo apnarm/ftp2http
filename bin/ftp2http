@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+
+import argparse
+import ftp2http
+import getpass
+import hashlib
+import os
+import sys
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-f', '--configuration-file',
+        default='/etc/ftp2http.conf',
+        help='Specifies the configuration file path.',
+    )
+    parser.add_argument(
+        '-a', '--generate-account',
+        action='store_true',
+        help='Generate details for adding a user account.'
+    )
+    args = parser.parse_args()
+
+    if args.generate_account:
+
+        name = raw_input('Enter a username: ')
+        password = getpass.getpass('Enter a password: ')
+        password_repeated = getpass.getpass('Confirm password: ')
+
+        if password != password_repeated:
+            sys.stderr.write('Error! The passwords did not match.\n')
+            sys.exit(1)
+
+        print
+        print 'Add the following line to your configuration file.'
+        print 'user: %s:sha512:%s' % (name, hashlib.sha512(password).hexdigest())
+        print
+
+    else:
+
+        configuration_path = os.path.abspath(args.configuration_file)
+        config = ftp2http.read_configuration_file(configuration_path)
+        ftp2http.start_ftp_server(**config)

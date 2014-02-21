@@ -1,0 +1,4 @@
+*.pyc
+build
+dist
+ftp2http.egg-info
