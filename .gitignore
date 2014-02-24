@@ -2,3 +2,9 @@
 build
 dist
 ftp2http.egg-info
+rpm/BUILD/*
+rpm/BUILDROOT/*
+rpm/RPMS/*
+rpm/SOURCES/*
+rpm/SRPMS/*
+source
