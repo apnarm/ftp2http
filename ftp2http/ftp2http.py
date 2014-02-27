@@ -11,6 +11,7 @@ be determined. This means that the HTTP request only starts when the file is
 
 """
 
+import base64
 import errno
 import hashlib
 import os
@@ -57,10 +58,20 @@ class PostFS(AbstractedFS):
     # --- Wrapper methods around open() and tempfile.mkstemp
 
     def open(self, filename, mode):
+
         assert isinstance(filename, unicode), filename
+
         if mode not in ('w', 'wb'):
             raise FilesystemError('open mode %s: filesystem operations are disabled.' % mode)
-        return self.post_file(filename)
+
+        directory, filename = os.path.split(filename)
+        username = os.path.basename(directory)
+        if self.cmd_channel.authorizer._password_cache:
+            password = self.cmd_channel.authorizer._password_cache[username]
+        else:
+            password = None
+
+        return self.post_file(filename, username, password)
 
     def mkstemp(self, suffix='', prefix='', dir=None, mode='wb'):
         raise FilesystemError('mkstemp: filesystem operations are disabled.')
@@ -150,10 +161,10 @@ class MultipartPostFile(object):
     BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
     CRLF = '\r\n'
 
-    def __init__(self, name):
-        directory, filename = os.path.split(name)
-        self.username = os.path.basename(directory)
+    def __init__(self, filename, username, password):
         self.name = filename
+        self.username = username
+        self.password = password
         self.closed = False
 
     def write(self, data):
@@ -191,6 +202,10 @@ class MultipartPostFile(object):
                 connection.putheader('Content-Type', 'multipart/form-data; boundary=%s' % self.BOUNDARY)
                 connection.putheader('Content-Length', str(length))
 
+                if self.password:
+                    credentials = base64.b64encode(b'%s:%s' % (self.username, self.password))
+                    connection.putheader('Authorization', 'Basic %s' % credentials)
+
                 connection.endheaders()
 
                 self.request_body.seek(0)
@@ -199,7 +214,17 @@ class MultipartPostFile(object):
                 response = connection.getresponse()
 
                 if response.status // 100 != 2:
-                    raise UnexpectedHTTPResponse('%d: %s' % (response.status, response.reason))
+
+                    message = '%d: %s' % (response.status, response.reason)
+
+                    if response.getheader('Content-Type') == 'text/plain':
+                        try:
+                            response_content = response.read(100).splitlines()[0]
+                            message = '%s. %s' % (message, response_content)
+                        except Exception:
+                            pass
+
+                    raise UnexpectedHTTPResponse(message)
 
             finally:
                 self.closed = True
@@ -293,10 +318,17 @@ class AccountAuthorizer(DummyAuthorizer):
         'sha512': hashlib.sha512,
     }
 
-    def __init__(self, accounts):
+    def __init__(self, accounts, http_basic_auth=False):
+
         super(AccountAuthorizer, self).__init__()
+
         for name, password in accounts.items():
             self.add_user(name, password)
+
+        if http_basic_auth:
+            self._password_cache = {}
+        else:
+            self._password_cache = None
 
     def add_user(self, username, password, perm='elw', msg_login='Login successful.', msg_quit='Goodbye.'):
 
@@ -319,9 +351,10 @@ class AccountAuthorizer(DummyAuthorizer):
         }
 
     def validate_authentication(self, username, password, handler):
-        """Raises AuthenticationFailed if supplied username and
-        password don't match the stored credentials, else return
-        None.
+        """
+        Raises AuthenticationFailed if supplied username and password don't
+        match the stored credentials, else return None.
+
         """
 
         msg = 'Authentication failed.'
@@ -334,11 +367,11 @@ class AccountAuthorizer(DummyAuthorizer):
 
             stored_password = self.user_table[username]['pwd']
             if stored_password.startswith('plain:'):
-                password = 'plain:%s' % password
+                hashed_password = 'plain:%s' % password
             else:
                 for hash_format, hash_func in self.hash_funcs.items():
                     if stored_password.startswith('%s:' % hash_format):
-                        password = '%s:%s' % (
+                        hashed_password = '%s:%s' % (
                             hash_format,
                             hash_func(password).hexdigest(),
                         )
@@ -346,8 +379,11 @@ class AccountAuthorizer(DummyAuthorizer):
                 else:
                     raise AuthenticationFailed('Unexpected password format in configuration file.')
 
-            if password != stored_password:
+            if hashed_password != stored_password:
                 raise AuthenticationFailed(msg)
+
+            if self._password_cache is not None:
+                self._password_cache[username] = password
 
 
 def read_configuration_file(path):
@@ -365,6 +401,15 @@ def read_configuration_file(path):
                     if key == 'user':
                         name, password = value.split(':', 1)
                         config['accounts'][name] = password
+                    elif key == 'http_basic_auth':
+                        value = value.lower()
+                        if value == 'true':
+                            config[key] = True
+                        elif value == 'false':
+                            pass
+                        else:
+                            sys.stderr.write('Unknown value for %s: %s\n' % (key, value))
+                            sys.exit(1)
                     else:
                         if key == 'listen_port':
                             value = int(value)
@@ -378,7 +423,7 @@ def read_configuration_file(path):
         return config
 
 
-def start_ftp_server(listen_host, listen_port, http_url, accounts, ssl_cert_path=None):
+def start_ftp_server(listen_host, listen_port, http_url, accounts, ssl_cert_path=None, http_basic_auth=False):
 
     if ssl_cert_path:
 
@@ -399,7 +444,7 @@ def start_ftp_server(listen_host, listen_port, http_url, accounts, ssl_cert_path
         handler.dtp_handler = PostDTPHandler
 
     handler.abstracted_fs = PostFS
-    handler.authorizer = AccountAuthorizer(accounts)
+    handler.authorizer = AccountAuthorizer(accounts, http_basic_auth=http_basic_auth)
     handler.use_sendfile = False
 
     PostFS.post_file = MultipartPostFile
