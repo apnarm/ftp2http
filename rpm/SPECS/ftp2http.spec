@@ -15,6 +15,7 @@ Vendor: Raymond Butcher <randomy@gmail.com>
 Url: https://github.com/apn-online/ftp2http
 
 BuildRequires: libffi-devel
+BuildRequires: openssl-devel
 BuildRequires: python
 BuildRequires: python-pip
 BuildRequires: python-virtualenv
@@ -66,7 +67,6 @@ FTP2HTTP is an FTP server which pushes uploaded files directly to a HTTP URL.
 
 %files
 
-    /etc/ftp2http.conf
     /usr/bin/ftp2http
     /usr/lib/ftp2http
 
