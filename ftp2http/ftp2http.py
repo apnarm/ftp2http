@@ -196,23 +196,28 @@ class MultipartPostFile(object):
 
                 length = self.request_body.tell()
 
-                parsed_url, connection = http_connection(self.url)
+                try:
 
-                connection.putrequest('POST', parsed_url.path)
+                    parsed_url, connection = http_connection(self.url)
 
-                connection.putheader('Content-Type', 'multipart/form-data; boundary=%s' % self.BOUNDARY)
-                connection.putheader('Content-Length', str(length))
+                    connection.putrequest('POST', parsed_url.path)
 
-                if self.password:
-                    credentials = base64.b64encode(b'%s:%s' % (self.username, self.password))
-                    connection.putheader('Authorization', 'Basic %s' % credentials)
+                    connection.putheader('Content-Type', 'multipart/form-data; boundary=%s' % self.BOUNDARY)
+                    connection.putheader('Content-Length', str(length))
 
-                connection.endheaders()
+                    if self.password:
+                        credentials = base64.b64encode(b'%s:%s' % (self.username, self.password))
+                        connection.putheader('Authorization', 'Basic %s' % credentials)
 
-                self.request_body.seek(0)
-                connection.send(self.request_body)
+                    connection.endheaders()
 
-                response = connection.getresponse()
+                    self.request_body.seek(0)
+                    connection.send(self.request_body)
+
+                    response = connection.getresponse()
+
+                except Exception as error:
+                    raise UnexpectedHTTPResponse('%s: %s' % (error.__class__, error))
 
                 if response.status // 100 != 2:
 
