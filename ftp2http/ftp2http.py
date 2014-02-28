@@ -12,6 +12,7 @@ be determined. This means that the HTTP request only starts when the file is
 """
 
 import base64
+import bcrypt
 import errno
 import hashlib
 import os
@@ -366,18 +367,7 @@ class AccountAuthorizer(DummyAuthorizer):
         if username != 'anonymous':
 
             stored_password = self.user_table[username]['pwd']
-            if stored_password.startswith('plain:'):
-                hashed_password = 'plain:%s' % password
-            else:
-                for hash_format, hash_func in self.hash_funcs.items():
-                    if stored_password.startswith('%s:' % hash_format):
-                        hashed_password = '%s:%s' % (
-                            hash_format,
-                            hash_func(password).hexdigest(),
-                        )
-                        break
-                else:
-                    raise AuthenticationFailed('Unexpected password format in configuration file.')
+            hashed_password = bcrypt.hashpw(password, stored_password)
 
             if hashed_password != stored_password:
                 raise AuthenticationFailed(msg)

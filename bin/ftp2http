@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 import argparse
+import bcrypt
 import ftp2http
 import getpass
-import hashlib
 import os
 import sys
 
@@ -32,9 +32,11 @@ if __name__ == '__main__':
             sys.stderr.write('Error! The passwords did not match.\n')
             sys.exit(1)
 
+        hashed_password = bcrypt.hashpw(password, bcrypt.gensalt())
+
         print
         print 'Add the following line to your configuration file.'
-        print 'user: %s:sha512:%s' % (name, hashlib.sha512(password).hexdigest())
+        print 'user: %s:%s' % (name, hashed_password)
         print
 
     else:

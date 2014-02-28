@@ -20,6 +20,7 @@ setup(
         'argparse',
         'pyftpdlib',
         'pyOpenSSL',
+        'python-bcrypt',
         'python-swiftclient==1.9.0',
     ),
 )
