@@ -4,16 +4,17 @@ ftp2http
 An FTP server that pushes uploaded files directly to a HTTP URL.
 
 
-What does it do?
-================
+Overview
+========
 
 Think of ftp2http as a simple FTP layer that sits before a HTTP server.
 
 An FTP client connects to an ftp2http server and uploads a file. The ftp2http
-server immediately uploads that file to a configured HTTP URL.
+server immediately uploads that file to the configured HTTP URL.
 
-Files are not downloaded from an ftp2http server. The FTP server appears
-empty to FTP clients.
+The server directory always appears empty to the client, even after a file has
+been uploaded. This is because uploaded files only sent to the HTTP server,
+and not stored.
 
 
 Building and installing
