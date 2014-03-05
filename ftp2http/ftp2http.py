@@ -16,6 +16,7 @@ import bcrypt
 import errno
 import hashlib
 import os
+import socket
 import sys
 import tempfile
 
@@ -418,7 +419,9 @@ def read_configuration_file(path):
         return config
 
 
-def start_ftp_server(listen_host, listen_port, http_url, accounts, ssl_cert_path=None, http_basic_auth=False):
+def start_ftp_server(http_url, accounts,
+                     ssl_cert_path=None, http_basic_auth=False,
+                     listen_host=None, listen_port=None, listen_fd=None):
 
     if ssl_cert_path:
 
@@ -445,7 +448,14 @@ def start_ftp_server(listen_host, listen_port, http_url, accounts, ssl_cert_path
     PostFS.post_file = MultipartPostFile
     PostFS.post_file.url = http_url
 
-    server = MultiprocessFTPServer((listen_host, listen_port), handler)
+    if listen_fd not in (None, -1):
+        listen_socket = socket.fromfd(listen_fd, socket.AF_UNIX, socket.SOCK_STREAM)
+        listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listen = listen_socket
+    else:
+        listen = (listen_host, listen_port)
+
+    server = MultiprocessFTPServer(listen, handler)
     server.max_cons = 256
     server.max_cons_per_ip = 5
     server.serve_forever()

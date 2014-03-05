@@ -20,6 +20,11 @@ if __name__ == '__main__':
         action='store_true',
         help='Generate details for adding a user account.'
     )
+    parser.add_argument(
+        '--fd',
+        type=int, default=-1,
+        help='Specifies a socket file descriptor.',
+    )
     args = parser.parse_args()
 
     if args.generate_account:
@@ -43,4 +48,5 @@ if __name__ == '__main__':
 
         configuration_path = os.path.abspath(args.configuration_file)
         config = ftp2http.read_configuration_file(configuration_path)
+        config['listen_fd'] = args.fd
         ftp2http.start_ftp_server(**config)
