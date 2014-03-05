@@ -53,7 +53,8 @@ FTP2HTTP is an FTP server which pushes uploaded files directly to a HTTP URL.
     
     # Make the ftp2http bin script available.
     mkdir -p $RPM_BUILD_ROOT/usr/bin
-    echo '/usr/lib/ftp2http/bin/ftp2http $*' > $RPM_BUILD_ROOT/usr/bin/ftp2http
+    echo '#!/bin/sh
+/usr/lib/ftp2http/bin/ftp2http $*' > $RPM_BUILD_ROOT/usr/bin/ftp2http
     chmod a+x $RPM_BUILD_ROOT/usr/bin/ftp2http
     
     # Copy the default configuration file.
