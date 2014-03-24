@@ -41,6 +41,9 @@ Usage
 * Configure server by editing /etc/ftp2http.conf
 * Run: `ftp2http`
 
+We use *circusd* to manage the ftp2http process. An example configuration has
+been provided in the examples directory.
+
 
 Authentication
 ============
