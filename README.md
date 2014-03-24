@@ -42,11 +42,18 @@ Usage
 * Run: `ftp2http`
 
 
-User Accounts
+Authentication
 ============
 
-User accounts are read from the ftp2http configuration file. A specific
-format is used, which can be generated using the `ftp2http -a` command.
+Authentication can be checked against user accounts specified in the
+configuration file, or by performing a HTTP request and checking the
+response code.
+
+User accounts in the the configuration file
+-------------------------------------------
+
+A specific format is used, which can be generated using the `ftp2http -a`
+command.
 
 Example:
 
@@ -61,7 +68,12 @@ Example:
 HTTP Basic Authentication
 -------------------------
 
-Authentication can also be used on the HTTP URL. By enabling **http_basic_auth**
-in the configuration file, ftp2http will reuse the FTP username and password
-for HTTP basic authentication. Of course, the HTTP URL will need to be set up
-with the same accounts as your ftp2http server.
+FTP login authentication can be performed via HTTP requests, using HTTP basic
+authentication. Set one or more **authentication_backend** entries in the
+configuration file, and then ftp2http will perform requests to check the FTP
+login details. Login details are accepted if a URL returns a 2xx response.
+
+File uploads themselves can also use HTTP basic authentication. By enabling
+**http_basic_auth** in the configuration file, ftp2http will reuse the FTP
+login details for HTTP basic authentication when sending uploaded files
+to the target URL.

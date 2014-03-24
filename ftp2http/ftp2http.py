@@ -201,7 +201,12 @@ class MultipartPostFile(object):
 
                     parsed_url, connection = http_connection(self.url)
 
-                    connection.putrequest('POST', parsed_url.path)
+                    if parsed_url.query:
+                        url_path = parsed_url.path + '?' + parsed_url.query
+                    else:
+                        url_path = parsed_url.path
+
+                    connection.putrequest('POST', url_path)
 
                     connection.putheader('Content-Type', 'multipart/form-data; boundary=%s' % self.BOUNDARY)
                     connection.putheader('Content-Length', str(length))
@@ -325,17 +330,19 @@ class AccountAuthorizer(DummyAuthorizer):
         'sha512': hashlib.sha512,
     }
 
-    def __init__(self, accounts, http_basic_auth=False):
+    def __init__(self, accounts, http_basic_auth=False, backends=()):
 
         super(AccountAuthorizer, self).__init__()
 
-        for name, password in accounts.items():
-            self.add_user(name, password)
+        for username, password in accounts.items():
+            self.add_user(username, password)
 
         if http_basic_auth:
             self._password_cache = {}
         else:
             self._password_cache = None
+
+        self._backends = backends
 
     def add_user(self, username, password, perm='elw', msg_login='Login successful.', msg_quit='Goodbye.'):
 
@@ -357,34 +364,59 @@ class AccountAuthorizer(DummyAuthorizer):
             'msg_quit': str(msg_quit)
         }
 
+    def _validate_with_url(self, username, password, url):
+        try:
+            parsed_url, connection = http_connection(url)
+            if parsed_url.query:
+                url_path = parsed_url.path + '?' + parsed_url.query
+            else:
+                url_path = parsed_url.path
+            connection.putrequest('GET', url_path)
+            credentials = base64.b64encode(b'%s:%s' % (username, password))
+            connection.putheader('Authorization', 'Basic %s' % credentials)
+            connection.endheaders()
+            response = connection.getresponse()
+            return response.status // 100 == 2
+        except Exception as error:
+            logger.error(error)
+            return False
+
+    def _validate_with_user_table(self, username, password):
+        if self.has_user(username):
+            stored_password = self.user_table[username]['pwd']
+            if stored_password is not None:
+                hashed_password = bcrypt.hashpw(password, stored_password)
+                if hashed_password == stored_password:
+                    return True
+        return False
+
     def validate_authentication(self, username, password, handler):
         """
-        Raises AuthenticationFailed if supplied username and password don't
-        match the stored credentials, else return None.
+        Raises AuthenticationFailed if the supplied username and password
+        are not valid credentials, else return None.
 
         """
 
-        msg = 'Authentication failed.'
-        if not self.has_user(username):
-            if username == 'anonymous':
-                msg = 'Anonymous access not allowed.'
-            raise AuthenticationFailed(msg)
+        valid = self._validate_with_user_table(username, password)
+        if not valid:
+            for url in self._backends:
+                valid = self._validate_with_url(username, password, url)
+                if valid:
+                    break
 
-        if username != 'anonymous':
-
-            stored_password = self.user_table[username]['pwd']
-            hashed_password = bcrypt.hashpw(password, stored_password)
-
-            if hashed_password != stored_password:
-                raise AuthenticationFailed(msg)
-
+        if valid:
+            if username not in self.user_table:
+                self.add_user(username, password=None)
             if self._password_cache is not None:
                 self._password_cache[username] = password
+        else:
+            raise AuthenticationFailed('Authentication failed.')
 
 
 def read_configuration_file(path):
     config = {
-        'accounts': {}
+        'accounts': {},
+        'authentication_backend': [],
     }
     try:
         with open(path) as conf_file:
@@ -406,6 +438,8 @@ def read_configuration_file(path):
                         else:
                             sys.stderr.write('Unknown value for %s: %s\n' % (key, value))
                             sys.exit(1)
+                    elif key == 'authentication_backend':
+                        config[key].append(value)
                     else:
                         if key == 'listen_port':
                             value = int(value)
@@ -415,11 +449,20 @@ def read_configuration_file(path):
             sys.stderr.write('Cannot find configuration file: %s\n' % path)
             sys.exit(1)
         raise
-    else:
-        return config
+
+    urls = []
+    for url in config.pop('authentication_backend'):
+        if url.startswith('http://') or url.startswith('https://'):
+            pass
+        else:
+            url = config['http_url'] + url
+        urls.append(url)
+    config['authentication_backends'] = urls
+
+    return config
 
 
-def start_ftp_server(http_url, accounts,
+def start_ftp_server(http_url, accounts, authentication_backends=(),
                      ssl_cert_path=None, http_basic_auth=False,
                      listen_host=None, listen_port=None, listen_fd=None):
 
@@ -442,7 +485,11 @@ def start_ftp_server(http_url, accounts,
         handler.dtp_handler = PostDTPHandler
 
     handler.abstracted_fs = PostFS
-    handler.authorizer = AccountAuthorizer(accounts, http_basic_auth=http_basic_auth)
+    handler.authorizer = AccountAuthorizer(
+        accounts=accounts,
+        http_basic_auth=http_basic_auth,
+        backends=authentication_backends,
+    )
     handler.use_sendfile = False
 
     PostFS.post_file = MultipartPostFile
