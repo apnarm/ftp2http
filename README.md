@@ -13,8 +13,8 @@ An FTP client connects to an ftp2http server and uploads a file. The ftp2http
 server immediately uploads that file to the configured HTTP URL.
 
 The server directory always appears empty to the client, even after a file has
-been uploaded. This is because uploaded files only sent to the HTTP server,
-and not stored.
+been uploaded. This is because uploaded files are only sent to the HTTP server,
+not stored.
 
 
 Building and installing
