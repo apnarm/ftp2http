@@ -31,7 +31,7 @@ Build RPM:
 Install RPM:
 
     $ cd ftp2http
-    $ rpm -i rpm/RPMS/x86_64/ftp2http-0.1-1.x86_64.rpm`
+    $ rpm -i rpm/RPMS/x86_64/ftp2http-0.2-1.x86_64.rpm
 
 
 Usage
@@ -46,8 +46,7 @@ Authentication
 ============
 
 Authentication can be checked against user accounts specified in the
-configuration file, or by performing a HTTP request and checking the
-response code.
+configuration file, or by configuring an authentication backend URL.
 
 User accounts in the the configuration file
 -------------------------------------------
@@ -71,7 +70,8 @@ HTTP Basic Authentication
 FTP login authentication can be performed via HTTP requests, using HTTP basic
 authentication. Set one or more **authentication_backend** entries in the
 configuration file, and then ftp2http will perform requests to check the FTP
-login details. Login details are accepted if a URL returns a 2xx response.
+login details. Login details are accepted if an authentication_backend URL
+returns a 2xx response.
 
 File uploads themselves can also use HTTP basic authentication. By enabling
 **http_basic_auth** in the configuration file, ftp2http will reuse the FTP
