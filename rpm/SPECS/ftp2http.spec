@@ -1,5 +1,4 @@
 %define name ftp2http
-%define version 0.1
 %define release 1
 
 Summary: FTP to HTTP server
@@ -43,7 +42,7 @@ FTP2HTTP is an FTP server which pushes uploaded files directly to a HTTP URL.
     virtualenv --no-site-packages --distribute $RPM_BUILD_ROOT/usr/lib/ftp2http
     
     # Install ftp2http (and its dependencies).
-    $RPM_BUILD_ROOT/usr/lib/ftp2http/bin/pip install ftp2http-0.1.tar.gz
+    $RPM_BUILD_ROOT/usr/lib/ftp2http/bin/pip install ftp2http-%{version}.tar.gz
     
     # Make the environment work when moved to another path.
     # But remove these scripts first because they have issues.
