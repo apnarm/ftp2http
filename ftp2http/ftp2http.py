@@ -464,7 +464,8 @@ def read_configuration_file(path):
 
 def start_ftp_server(http_url, accounts, authentication_backends=(),
                      ssl_cert_path=None, http_basic_auth=False,
-                     listen_host=None, listen_port=None, listen_fd=None):
+                     listen_host=None, listen_port=None, listen_fd=None,
+                     passive_port_min=0, passive_port_max=0):
 
     if ssl_cert_path:
 
@@ -483,6 +484,10 @@ def start_ftp_server(http_url, accounts, authentication_backends=(),
 
         handler = FTPHandler
         handler.dtp_handler = PostDTPHandler
+
+    passive_ports = range(passive_port_min, passive_port_max)
+    if passive_ports:
+        handler.passive_ports = passive_ports
 
     handler.abstracted_fs = PostFS
     handler.authorizer = AccountAuthorizer(
