@@ -1,28 +1,19 @@
-.PHONY: all build clean
+$(eval VERSION := $(shell python setup.py --version))
+SDIST := dist/ftp2http-$(VERSION).tar.gz
 
 all: build
 
-build:
-	
-	make clean
-	
-	# Get the current version number.
-	$(eval VERSION := $(shell python setup.py --version))
-	
-	# Build the python library.
-	python setup.py sdist
-	
-	# Create the source file for the RPM.
-	mkdir -p source/ftp2http-$(VERSION)
-	cp conf/ftp2http.conf source/ftp2http-$(VERSION)
-	cp dist/ftp2http-$(VERSION).tar.gz source/ftp2http-$(VERSION)
-	mkdir -p rpm/SOURCES
-	cd source && tar -czf ../rpm/SOURCES/ftp2http-$(VERSION).tar.gz *
-	
-	# Build the RPM.
-	rpm/build.sh $(VERSION)
+build: $(SDIST)
 
+$(SDIST):
+	python setup.py sdist
+	rm -rf ftp2http.egg-info
+
+.PHONY: upload
+upload:
+	python setup.py sdist upload
+	rm -rf ftp2http.egg-info
+
+.PHONY: clean
 clean:
-	rm -rf build dist ftp2http.egg
-	rm -rf source
-	rm -rf rpm/BUILD/* rpm/BUILDROOT/*
+	rm -rf dist ftp2http.egg ftp2http.egg-info
