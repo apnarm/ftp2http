@@ -418,6 +418,7 @@ def read_configuration_file(path):
         'accounts': {},
         'authentication_backend': [],
     }
+    int_values = ('listen_port', 'passive_port_min', 'passive_port_max')
     try:
         with open(path) as conf_file:
             print 'Using configuration file %s' % path
@@ -426,6 +427,8 @@ def read_configuration_file(path):
                 if line and not line.startswith('#'):
                     key, value = line.split(':', 1)
                     value = value.strip()
+                    if key in int_values:
+                        value = int(value)
                     if key == 'user':
                         name, password = value.split(':', 1)
                         config['accounts'][name] = password
@@ -441,8 +444,6 @@ def read_configuration_file(path):
                     elif key == 'authentication_backend':
                         config[key].append(value)
                     else:
-                        if key == 'listen_port':
-                            value = int(value)
                         config[key] = value
     except IOError as error:
         if error.errno == errno.ENOENT:
@@ -464,7 +465,8 @@ def read_configuration_file(path):
 
 def start_ftp_server(http_url, accounts, authentication_backends=(),
                      ssl_cert_path=None, http_basic_auth=False,
-                     listen_host=None, listen_port=None, listen_fd=None):
+                     listen_host=None, listen_port=None, listen_fd=None,
+                     passive_port_min=0, passive_port_max=0):
 
     if ssl_cert_path:
 
@@ -483,6 +485,9 @@ def start_ftp_server(http_url, accounts, authentication_backends=(),
 
         handler = FTPHandler
         handler.dtp_handler = PostDTPHandler
+
+    if passive_port_min and passive_port_max:
+        handler.passive_ports = range(passive_port_min, passive_port_max + 1)
 
     handler.abstracted_fs = PostFS
     handler.authorizer = AccountAuthorizer(
