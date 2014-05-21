@@ -418,8 +418,6 @@ def read_configuration_file(path):
                 if line and not line.startswith('#'):
                     key, value = line.split(':', 1)
                     value = value.strip()
-                    if key in int_values:
-                        value = int(value)
                     if key == 'user':
                         name, password = value.split(':', 1)
                         config['accounts'][name] = password
@@ -435,6 +433,8 @@ def read_configuration_file(path):
                     elif key == 'authentication_backend':
                         config[key].append(value)
                     else:
+                        if key in int_values:
+                            value = int(value)
                         config[key] = value
     except IOError as error:
         if error.errno == errno.ENOENT:
@@ -457,7 +457,7 @@ def read_configuration_file(path):
 def start_ftp_server(http_url, accounts, authentication_backends=(),
                      ssl_cert_path=None, http_basic_auth=False,
                      listen_host=None, listen_port=None, listen_fd=None,
-                     passive_port_min=0, passive_port_max=0):
+                     passive_port_min=None, passive_port_max=None):
 
     if ssl_cert_path:
 
