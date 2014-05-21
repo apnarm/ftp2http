@@ -36,7 +36,7 @@ class PostFS(AbstractedFS):
 
     def validpath(self, path):
         """
-        Check whether the path belongs to user's home directory.
+        Check whether the path belongs to the user's home directory.
         Expected argument is a "real" filesystem pathname.
 
         Pathnames escaping from user's root directory are considered
@@ -148,7 +148,7 @@ class PostFS(AbstractedFS):
     def get_list_dir(self, path):
         """"
         Return an iterator object that yields a directory listing
-        in a form suitable for LIST command.
+        in a form suitable for the LIST command.
 
         """
         assert isinstance(path, unicode), path
@@ -294,9 +294,10 @@ class PostDTPHandlerMixin(object):
 
     def close(self):
         """
-        Extend the class to close the file early, triggering the HTTP upload
-        before a response is returned to the FTP client. If the event of an
-        unsuccessful HTTP upload, pass the error message on to the FTP client.
+        Extend the class to close the file earlier than usual, making the HTTP
+        upload occur before a response is sent to the FTP client. In the event
+        of an unsuccessful HTTP upload, relay the HTTP error message to the
+        FTP client by overriding the response.
 
         """
 
