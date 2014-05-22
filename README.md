@@ -17,32 +17,23 @@ been uploaded. This is because uploaded files are only sent to the HTTP server,
 not stored.
 
 
-Building and installing
+Installation
 =======================
 
-Minimal effort has been put into the build scripts at this stage.
-We are using Scientific Linux 6 to build an x86_64 RPM.
+Install ftp2http by using pip, a tool for managing Python packages.
 
-Build RPM:
-
-    $ cd ftp2http
-    $ make
-
-Install RPM:
-
-    $ cd ftp2http
-    $ rpm -i rpm/RPMS/x86_64/ftp2http-0.2-1.x86_64.rpm
+1. Run `pip install ftp2http`
+2. Create a configuration file at `/etc/ftp2http.conf`
+  * Example: https://github.com/apn-online/ftp2http/blob/master/conf/ftp2http.conf
 
 
 Usage
 =====
 
-* Install ftp2http
-* Configure server by editing /etc/ftp2http.conf
-* Run: `ftp2http`
+* Run `ftp2http`
 
-We use *circusd* to manage the ftp2http process. An example configuration has
-been provided in the examples directory.
+We use **circusd** to manage the ftp2http process. An example configuration has
+been provided in the **examples** directory.
 
 
 Authentication
@@ -54,8 +45,8 @@ configuration file, or by configuring an authentication backend URL.
 User accounts in the the configuration file
 -------------------------------------------
 
-A specific format is used, which can be generated using the `ftp2http -a`
-command.
+A specific configuration format is used, which can be generated using the
+`ftp2http -a` command.
 
 Example:
 
