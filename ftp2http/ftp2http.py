@@ -432,6 +432,8 @@ def read_configuration_file(path):
                             sys.exit(1)
                     elif key == 'authentication_backend':
                         config[key].append(value)
+                    elif key == 'masquerade_address':
+                        config[key] = socket.gethostbyname(value)
                     else:
                         if key in int_values:
                             value = int(value)
@@ -457,7 +459,8 @@ def read_configuration_file(path):
 def start_ftp_server(http_url, accounts, authentication_backends=(),
                      ssl_cert_path=None, http_basic_auth=False,
                      listen_host=None, listen_port=None, listen_fd=None,
-                     passive_port_min=None, passive_port_max=None):
+                     passive_port_min=None, passive_port_max=None,
+                     masquerade_address=None):
 
     if ssl_cert_path:
 
@@ -479,6 +482,9 @@ def start_ftp_server(http_url, accounts, authentication_backends=(),
 
     if passive_port_min and passive_port_max:
         handler.passive_ports = range(passive_port_min, passive_port_max + 1)
+
+    if masquerade_address:
+        handler.masquerade_address = masquerade_address
 
     handler.abstracted_fs = PostFS
     handler.authorizer = AccountAuthorizer(
