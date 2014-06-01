@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='ftp2http',
-    version='0.3.1',
+    version='0.3.2',
     description='FTP to HTTP server',
     author='Raymond Butcher',
     author_email='randomy@gmail.com',
@@ -20,7 +20,7 @@ setup(
         'argparse',
         'pyftpdlib',
         'pyOpenSSL',
-        'python-bcrypt',
+        'py-bcrypt',
         'python-swiftclient==1.9.0',
     ),
 )
