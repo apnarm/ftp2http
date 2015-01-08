@@ -8,7 +8,6 @@ content-length header. Because the FTP protocol does not send the size of a file
 before it begins uploading, the entire file must be received before its size can
 be determined. This means that the HTTP request only starts when the file is
 100% uploaded.
-
 """
 
 import base64
@@ -43,23 +42,27 @@ class PostFS(AbstractedFS):
         not valid.
 
         Overridden to not access the filesystem at all.
-
         """
+
         assert isinstance(path, unicode), path
+
         root = os.path.normpath(self.root)
         path = os.path.normpath(path)
+
         if not root.endswith(os.sep):
             root = root + os.sep
+
         if not path.endswith(os.sep):
             path = path + os.sep
+
         if path[0:len(root)] == root:
             return True
+
         return False
 
     # --- Wrapper methods around open() and tempfile.mkstemp
 
     def open(self, filename, mode):
-
         assert isinstance(filename, unicode), filename
 
         if mode not in ('w', 'wb'):
@@ -113,10 +116,12 @@ class PostFS(AbstractedFS):
 
     def isfile(self, path):
         assert isinstance(path, unicode), path
+
         return False
 
     def islink(self, path):
         assert isinstance(path, unicode), path
+
         return False
 
     def isdir(self, path):
@@ -131,10 +136,12 @@ class PostFS(AbstractedFS):
 
     def realpath(self, path):
         assert isinstance(path, unicode), path
+
         return path
 
     def lexists(self, path):
         assert isinstance(path, unicode), path
+
         return False
 
     def get_user_by_uid(self, uid):
@@ -149,9 +156,10 @@ class PostFS(AbstractedFS):
         """"
         Return an iterator object that yields a directory listing
         in a form suitable for the LIST command.
-
         """
+
         assert isinstance(path, unicode), path
+
         return self.format_list(path, [])
 
 
@@ -169,14 +177,14 @@ class MultipartPostFile(object):
         self.closed = False
 
     def write(self, data):
-
         if not hasattr(self, 'request_body'):
-
             self.request_body = tempfile.SpooledTemporaryFile()
 
             self.request_body.write('--' + self.BOUNDARY)
             self.request_body.write(self.CRLF)
-            self.request_body.write('Content-Disposition: form-data; name="%s"; filename="%s"' % (self.username, self.name))
+            self.request_body.write(
+                'Content-Disposition: form-data; name="%s"; filename="%s"' % (self.username, self.name)
+            )
             self.request_body.write(self.CRLF)
             self.request_body.write('Content-Type: application/octet-stream')
             self.request_body.write(self.CRLF)
@@ -185,11 +193,8 @@ class MultipartPostFile(object):
         self.request_body.write(data)
 
     def close(self):
-
         if not self.closed and hasattr(self, 'request_body'):
-
             try:
-
                 self.request_body.write(self.CRLF)
                 self.request_body.write('--' + self.BOUNDARY + '--')
                 self.request_body.write(self.CRLF)
@@ -197,7 +202,6 @@ class MultipartPostFile(object):
                 length = self.request_body.tell()
 
                 try:
-
                     parsed_url, connection = http_connection(self.url)
 
                     if parsed_url.query:
@@ -220,12 +224,10 @@ class MultipartPostFile(object):
                     connection.send(self.request_body)
 
                     response = connection.getresponse()
-
                 except Exception as error:
                     raise UnexpectedHTTPResponse('%s: %s' % (error.__class__, error))
 
                 if response.status // 100 != 2:
-
                     message = '%d: %s' % (response.status, response.reason)
 
                     if response.getheader('Content-Type') == 'text/plain':
@@ -236,58 +238,9 @@ class MultipartPostFile(object):
                             pass
 
                     raise UnexpectedHTTPResponse(message)
-
             finally:
                 self.closed = True
                 self.request_body.close()
-
-#
-# Using chunked transfer encoding would be preferable over multipart form
-# data, but it is not supported by Django or WSGI or whatever. Keeping it
-# here just in case.
-#
-#class ChunkedPostFile(object):
-#
-#    url = None
-#
-#    def __init__(self, name):
-#        self.name = name
-#        self.closed = False
-#
-#    def write(self, data):
-#
-#        if not hasattr(self, 'connection'):
-#
-#            parsed_url, self.connection = http_connection(self.url)
-#
-#            self.connection.putrequest('POST', parsed_url.path + '?path=' + self.name)
-#
-#            self.connection.putheader('Content-Type', 'application/octet-stream')
-#            self.connection.putheader('Transfer-Encoding', 'chunked')
-#
-#            self.connection.endheaders()
-#
-#        length = len(data)
-#        self.connection.send('%X\r\n' % length)
-#        self.connection.send(data)
-#        self.connection.send('\r\n')
-#
-#    def close(self):
-#
-#        if not self.closed and hasattr(self, 'connection'):
-#
-#            try:
-#
-#                self.connection.send('0\r\n\r\n')
-#
-#                response = self.connection.getresponse()
-#
-#                if response.status // 100 != 2:
-#                    raise UnexpectedHTTPResponse('%d: %s' % (response.status, response.reason))
-#
-#            finally:
-#                self.closed = True
-#                self.connection.close()
 
 
 class PostDTPHandlerMixin(object):
@@ -298,7 +251,6 @@ class PostDTPHandlerMixin(object):
         upload occur before a response is sent to the FTP client. In the event
         of an unsuccessful HTTP upload, relay the HTTP error message to the
         FTP client by overriding the response.
-
         """
 
         if self.receive and self.transfer_finished and not self._closed:
@@ -322,7 +274,6 @@ class TLS_PostDTPHandler(PostDTPHandlerMixin, TLS_DTPHandler):
 class AccountAuthorizer(DummyAuthorizer):
 
     def __init__(self, accounts, http_basic_auth=False, backends=()):
-
         super(AccountAuthorizer, self).__init__()
 
         for username, password in accounts.items():
@@ -336,7 +287,6 @@ class AccountAuthorizer(DummyAuthorizer):
         self._backends = backends
 
     def add_user(self, username, password, perm='elw', msg_login='Login successful.', msg_quit='Goodbye.'):
-
         if self.has_user(username):
             raise ValueError('user %r already exists' % username)
 
@@ -385,7 +335,6 @@ class AccountAuthorizer(DummyAuthorizer):
         """
         Raises AuthenticationFailed if the supplied username and password
         are not valid credentials, else return None.
-
         """
 
         valid = self._validate_with_user_table(username, password)
@@ -404,7 +353,10 @@ class AccountAuthorizer(DummyAuthorizer):
             raise AuthenticationFailed('Authentication failed.')
 
 
-def read_configuration_file(path):
+def read_configuration_file(path):  # noqa
+    # XXX: C901: This has a high McCacbe complexity
+    # TODO: Use ConfigParser or similar.
+
     config = {
         'accounts': {},
         'authentication_backend': [],
@@ -463,7 +415,6 @@ def start_ftp_server(http_url, accounts, authentication_backends=(),
                      masquerade_address=None):
 
     if ssl_cert_path:
-
         if not os.path.exists(ssl_cert_path):
             sys.stderr.write('Cannot find SSL certificate file: %s\n' % ssl_cert_path)
             sys.exit(2)
@@ -474,9 +425,7 @@ def start_ftp_server(http_url, accounts, authentication_backends=(),
         handler.certfile = ssl_cert_path
         handler.tls_control_required = True
         handler.tls_data_required = True
-
     else:
-
         handler = FTPHandler
         handler.dtp_handler = PostDTPHandler
 
