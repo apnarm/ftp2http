@@ -7,11 +7,13 @@ build: $(SDIST)
 
 $(SDIST):
 	python setup.py sdist
+	python setup.py bdist_wheel
 	rm -rf ftp2http.egg-info
 
 .PHONY: upload
 upload:
 	python setup.py sdist upload
+	python setup.py bdist_wheel upload
 	rm -rf ftp2http.egg-info
 
 .PHONY: clean
