@@ -21,6 +21,6 @@ setup(
         'pyftpdlib',
         'pyOpenSSL',
         'py-bcrypt',
-        'python-swiftclient==1.9.0',
+        'python-swiftclient',
     ),
 )
