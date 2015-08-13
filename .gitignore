@@ -1,10 +1,8 @@
-*.pyc
-build
+*~
 dist
-ftp2http.egg-info
-rpm/BUILD/*
-rpm/BUILDROOT/*
-rpm/RPMS/*
-rpm/SOURCES/*
-rpm/SRPMS/*
-source
+.eggs
+*.bak
+build
+*.py[co]
+*.egg-info
+*/version.py

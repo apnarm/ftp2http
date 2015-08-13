@@ -1,1 +1,2 @@
-from ftp2http import *
+from . import *  # noqa
+from .version import version as __version__  # noqa
