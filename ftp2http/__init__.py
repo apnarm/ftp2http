@@ -1,1 +1,1 @@
-from ftp2http import *
+from ftp2http import *  # noqa
