@@ -176,7 +176,7 @@ class MultipartPostFile(object):
 
             self.request_body.write('--' + self.BOUNDARY)
             self.request_body.write(self.CRLF)
-            self.request_body.write('Content-Disposition: form-data; name="%s"; filename="%s"' % (self.username, self.name))
+            self.request_body.write('Content-Disposition: form-data; name="%s"; filename="%s"' % (self.username, self.name.encode('ascii', 'ignore')))
             self.request_body.write(self.CRLF)
             self.request_body.write('Content-Type: application/octet-stream')
             self.request_body.write(self.CRLF)
